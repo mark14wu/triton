@@ -7962,6 +7962,24 @@ def test_num_programs(device):
     assert torch.all(input == torch.tensor(grid, device=device))
 
 
+@pytest.mark.interpreter
+@pytest.mark.parametrize("from_function", [False, True])
+def test_grid_as_list(from_function, device):
+    # A grid can be any sequence, e.g. a list or a function returning one.
+    output = torch.zeros((2, 3), dtype=torch.int32, device=device)
+
+    @triton.jit
+    def kernel(output):
+        pid0 = tl.program_id(0)
+        pid1 = tl.program_id(1)
+        tl.store(output + pid0 * tl.num_programs(1) + pid1, pid0 * 10 + pid1)
+
+    grid = [2, 3]
+    kernel[(lambda meta: grid) if from_function else grid](output)
+    expected = torch.tensor([[0, 1, 2], [10, 11, 12]], dtype=torch.int32, device=device)
+    assert torch.equal(output, expected)
+
+
 # -----------------------
 # test loop unrolling
 # -----------------------

@@ -1524,7 +1524,8 @@ class GridExecutor:
             # implicitly convert tensor arguments to their base pointers
             args = inspect.getcallargs(self.fn, *args_hst, **kwargs_hst)
             args = {name: arg if name in self.constexprs else _implicit_cvt(arg) for name, arg in args.items()}
-            # iterate through grid
+            # iterate through grid; like the compiler, accept any sequence (e.g. a list)
+            grid = tuple(grid)
             assert len(grid) <= 3, "grid must have at most 3 dimensions"
             grid = grid + (1, ) * (3 - len(grid))
             interpreter_builder.set_grid_dim(*grid)
